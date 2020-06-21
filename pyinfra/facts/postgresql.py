@@ -3,6 +3,27 @@ from pyinfra.api.util import try_int
 
 from .util.databases import parse_columns_and_rows
 
+class Mask(str):
+    hide_me = "wear a mask"
+
+class StringCommand:
+
+    def __init__(self, value, masked=None):
+        self.value = value
+        self.masked = masked if masked else value
+
+    def __str__(self):
+        return self.value
+
+    def __repr__(self):
+        return self.masked
+
+    @classmethod
+    def join(cls, lst):
+        value = " ".join(lst)
+        masked = " ".join(["***" if hasattr(i, "hide_me") else i for i in lst])
+        return cls(value, masked)
+
 
 def make_psql_command(
     database=None,
@@ -15,7 +36,7 @@ def make_psql_command(
     target_bits = []
 
     if password:
-        target_bits.append('PGPASSWORD="{0}"'.format(password))
+        target_bits.append(Mask('PGPASSWORD="{0}"'.format(password)))
 
     target_bits.append(executable)
 
@@ -31,7 +52,8 @@ def make_psql_command(
     if port:
         target_bits.append('-p {0}'.format(port))
 
-    return ' '.join(target_bits)
+    return StringCommand.join(target_bits)
+    #return ' '.join(target_bits)
 
 
 def make_execute_psql_command(command, **postgresql_kwargs):
